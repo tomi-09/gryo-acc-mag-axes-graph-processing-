@@ -21,7 +21,7 @@ float gx, gy, gz;
 float ax, ay, az;
 float mx, my, mz;
 float roll=0,pitch=0,yaw=0;
-int a=1;//
+int a=1;//回転方向
 graphMonitor x_GyroGraph;
 graphMonitor y_GyroGraph;
 graphMonitor z_GyroGraph;
@@ -37,14 +37,14 @@ graphMonitor z_rotations;
 
 circleMonitor roll_circle;
 circleMonitor pitch_circle;
-circleMonitor yaw_circle;
+circleMonitor yaw_circle;//未実装
 
 void setup(){
-  size(2800,1000,OPENGL);//3D space specific
-  myPort = new Serial(this,"COM4",115200);//COM4 serial 115200
+  size(2800,1000,P3D);//3D space specific
+ myPort = new Serial(this,"COM4",115200);//COM4 serial 115200
   frameRate(50);
   smooth();
-  myPort.bufferUntil('\n');//buffer�� \n
+  myPort.bufferUntil('\n');//\nでデータ分割
   
   x_GyroGraph = new graphMonitor("x_gyro", 100,  40, graph_width, graph_depth,x_color);//String _TITLE,_X_POSITION,_Y_POSITION,_,_Y_LENGTH
   y_GyroGraph = new graphMonitor("y_gyro", 100, 240, graph_width, graph_depth,y_color);
@@ -52,7 +52,7 @@ void setup(){
   x_AccelGraph= new graphMonitor("x_accel",720,  40, graph_width, graph_depth,x_color);
   y_AccelGraph= new graphMonitor("y_accel",720, 240, graph_width, graph_depth,y_color);
   z_AccelGraph= new graphMonitor("z_accel",720, 440, graph_width, graph_depth,z_color);
-  x_MagGraph  = new graphMonitor("x_mag", 1340,  40, graph_width, graph_depth,x_color);//�z��ł܂Ƃ߂�ƌ����ɂ���
+  x_MagGraph  = new graphMonitor("x_mag", 1340,  40, graph_width, graph_depth,x_color);
   y_MagGraph  = new graphMonitor("y_mag", 1340, 240, graph_width, graph_depth,y_color);
   z_MagGraph  = new graphMonitor("z_mag", 1340, 440, graph_width, graph_depth,z_color);
   x_rotations = new graphMonitor("roll",  1960,  40, graph_width, graph_depth,x_color);
@@ -82,16 +82,16 @@ void draw(){
   roll_circle.graphDraw(roll);
   pitch_circle.graphDraw(pitch);
   yaw_circle(yaw);
-
+ 
   ypr_box(roll,pitch,yaw);
   ryp_box(roll,pitch,yaw);
 }
 
 void serialEvent(Serial myPort){
-  String myString = myPort.readStringUntil('\n');// �V���A���o�b�t�@�[��Ǎ���
+  String myString = myPort.readStringUntil('\n');
 
   if (myString != null) {
-    myString = trim(myString);//trim �󔒏���
+    myString = trim(myString);//trimで空白消去
     float sensors[] = float(split(myString, ','));// ,cut output
     if (sensors.length > 2) {
       switch(int(sensors[0])){
@@ -121,8 +121,7 @@ void serialEvent(Serial myPort){
     }   
   }
 }
-
-void ypr_box(float r,float p,float y ){//�I�C���[�p�x ������
+void ypr_box(float r,float p,float y ){//YPR
   ambientLight(200,200,200);
   pointLight(200,200,200,box_Xpotision,box_Ypotision,70);//light potison
   lightFalloff(1,0,0);
@@ -136,7 +135,7 @@ void ypr_box(float r,float p,float y ){//�I�C���[�p�x ����
   text("YPR", box_textpotision, box_textpotision);
       
   rotateY(radians(y));//Y_rotations is changed  raw(Z_rotation)
-  rotateZ(radians(a*r));//������
+  rotateZ(radians(a*r));
   rotateX(radians(-a*-p));
   fill(70, 180, 230);
   stroke(200,255,230);
@@ -151,7 +150,7 @@ void ypr_box(float r,float p,float y ){//�I�C���[�p�x ����
   popMatrix();
 }
 
-void ryp_box(float r ,float p ,float y){//���s ���Ă���͂��H�H�H
+void ryp_box(float r ,float p ,float y){//RYP
   ambientLight(100,100,100);
   pointLight(100,100,100,box_Xpotision,box_Ypotision,70);//light potison
   lightFalloff(1,0,0);
@@ -185,7 +184,7 @@ String TITLE;
 int X_POSITION,Y_POSITION;
 int X_LENGTH,Y_LENGTH;
 int c;
-graphMonitor(String _TITLE, int _X_POSITION, int _Y_POSITION,int _COLOR){
+circleMonitor(String _TITLE, int _X_POSITION, int _Y_POSITION,int _COLOR){
 TITLE=_TITLE;
 X_POSITION=_X_POSITION;
 Y_POSITION=_Y_POSITION;
@@ -205,9 +204,9 @@ pushMatrix();
   fill(25);
   ellipse(0,0,circle_R,circle_R);
 
-  fill(axis_color[c][0],axis_color[c][1],axis_color[c][1]);
+  fill(axis_color[c][0],axis_color[c][1],axis_color[c][2]);
   textSize(18);
-  text(r,-circle_R/2-60,0);
+  text(ang,-circle_R/2-60,0);
 
   line(-circle_R/2,0,circle_R/2,0);
   line(0,-circle_R/2,0,circle_R/2);
@@ -217,7 +216,7 @@ pushMatrix();
   fill(axis_color[c][0],axis_color[c][1],axis_color[c][2]);
   translate(0,0);  
   rotate(radians(ang)); 
-  rect(0,0,Rectangle_width,Rectangle_height);
+  rect(-Rectangle_width/2,-Rectangle_height/2,Rectangle_width,Rectangle_height);
   popMatrix();
  }
 }/*
@@ -276,9 +275,9 @@ void pitch_circle(float p){// pitch circle
   rect(0,0,Rectangle_width,Rectangle_height);
   popMatrix();
 }*/
-void yaw_circle(float y){// yaw circle
+void yaw_circle(float ang){// yaw circle
   pushMatrix();
-  translate(circle_Xpotision+700,circle_Ypotision);
+  translate(700+350,800);//picthの円の描写位置から(+700,+0)
   textSize(text_size);// title
   fill(80,200,200);
   textAlign(LEFT, BOTTOM);
@@ -291,7 +290,7 @@ void yaw_circle(float y){// yaw circle
 
   fill(200,200,80);
   textSize(18);
-  text(y,-circle_R/2-60,0);
+  text(ang,-circle_R/2-60,0);
 
   strokeWeight(1);
   stroke(220);
@@ -300,7 +299,7 @@ void yaw_circle(float y){// yaw circle
   fill(200,200,80);
   stroke(200,200,90);
   translate(0,0);  
-  rotate(radians(-y)); 
+  rotate(radians(-ang)); 
   beginShape();
 for (int i = 0; i < 4; i++) {
   int R;
@@ -320,7 +319,8 @@ class graphMonitor {
     int X_LENGTH, Y_LENGTH;
     float [] y1;
     float maxRange;
-    graphMonitor(String _TITLE, int _X_POSITION, int _Y_POSITION, int _X_LENGTH, int _Y_LENGTH int _COLOR) {
+    int c;
+    graphMonitor(String _TITLE, int _X_POSITION, int _Y_POSITION, int _X_LENGTH, int _Y_LENGTH ,int _COLOR) {
       TITLE = _TITLE;
       X_POSITION = _X_POSITION;
       Y_POSITION = _Y_POSITION;
@@ -333,7 +333,6 @@ class graphMonitor {
       }
     }
  void graphDraw(float _y1) {
-       float f=0; //frame rate change
       y1[X_LENGTH - 1] = _y1;
       for (int i = 0; i < X_LENGTH - 1; i++) {
         y1[i] = y1[i + 1];
@@ -347,7 +346,7 @@ class graphMonitor {
       fill(25);//in fill
       stroke(160);//out fill
       strokeWeight(1);//line weight
-      rect(250,74, X_LENGTH, Y_LENGTH);//rect potison
+      rect(0,0, X_LENGTH, Y_LENGTH);//rect potison
       line(0, Y_LENGTH / 2, X_LENGTH, Y_LENGTH / 2);//center line
 
       textSize(25);//graph title
